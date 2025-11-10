@@ -1,0 +1,23 @@
+# Core ABM engine
+mesa==3.3.1
+
+# Web UI framework (used by Mesa 3.3 visualization)
+solara==1.31.0
+fastapi>=0.115
+uvicorn>=0.32
+starlette>=0.37
+
+# Data stack (required by Mesa + Solara)
+numpy>=2.3
+pandas>=2.3
+scipy>=1.16
+tqdm>=4.67
+
+# Visualization support
+altair>=5.3
+matplotlib>=3.9
+
+# Optional: better notebook/dev experience
+jupyterlab>=4.2
+ipykernel>=6.29
+
