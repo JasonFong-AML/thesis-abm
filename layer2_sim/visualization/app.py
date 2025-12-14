@@ -22,8 +22,7 @@ import sys
 current_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(current_dir))
 
-from model.model import DisinformationModel
-from model.archetypes import ARCHETYPES, STATE_COLORS
+from model import DisinformationModel, ARCHETYPES, STATE_COLORS
 
 
 # ============================================================================
@@ -269,6 +268,14 @@ def SimulationControls():
                         color="error",
                         outlined=True
                     )
+                    
+                    if current_step.value > 0:
+                        solara.Button(
+                            "💾 Export CSV",
+                            on_click=export_results,
+                            color="info",
+                            outlined=True
+                        )
             
             # Max steps
             solara.Markdown("**Maximum Timesteps**")
@@ -401,6 +408,7 @@ def MetricsSummary():
     model = model_instance.value
     metrics = model.get_peak_metrics()
     rates = model.get_archetype_infection_rates()
+    profile_metrics = model.get_profile_stratified_metrics()
     
     with solara.Card("📋 Metrics Summary", style={"margin-bottom": "15px"}):
         solara.Markdown(f"""
@@ -410,21 +418,46 @@ def MetricsSummary():
 - **Time to Peak:** {metrics['time_to_peak']} timesteps
 - **Final Attack Rate:** {metrics['attack_rate']:.1%} (proportion ever infected)
 
-### Archetype-Specific Infection Rates
+### Profile-Stratified Outcomes
         """)
         
-        for archetype_name, data in rates.items():
+        # Table header
+        solara.Markdown("""
+| Profile | Attack Rate | Mean Time in I | Correction Rate |
+|---------|-------------|----------------|-----------------|""")
+        
+        for archetype_name, data in profile_metrics.items():
             color = ARCHETYPES[archetype_name]['color']
-            pct = data['percentage']
+            display_name = archetype_name.replace('_', ' ').title()
             
-            # Create simple progress bar using markdown
-            filled = int(pct * 20)
-            bar = '█' * filled + '░' * (20 - filled)
+            attack_rate_pct = data['attack_rate'] * 100
+            mean_time = data['mean_time_in_I']
+            correction_rate_pct = data['correction_rate'] * 100
             
-            solara.Markdown(f"""
-**{color} {archetype_name.replace('_', ' ').title()}:** {data['infected']}/{data['total']} ({pct:.1%})  
-`{bar}`
-            """)
+            solara.Markdown(
+                f"| {color} **{display_name}** | "
+                f"{attack_rate_pct:.1f}% | "
+                f"{mean_time:.1f} steps | "
+                f"{correction_rate_pct:.1f}% |"
+            )
+        
+        # Additional details in collapsible section
+        with solara.Details("📊 Detailed Profile Metrics"):
+            for archetype_name, data in profile_metrics.items():
+                color = ARCHETYPES[archetype_name]['color']
+                display_name = archetype_name.replace('_', ' ').title()
+                
+                solara.Markdown(f"""
+**{color} {display_name}**
+- Total agents: {data['total_agents']}
+- Ever infected: {data['ever_infected']} ({data['attack_rate']:.1%})
+- Total infection episodes: {data['total_infections']}
+- Total recoveries: {data['total_recoveries']}
+- Correction rate: {data['correction_rate']:.1%} (recoveries/infections)
+- Mean relapses per agent: {data['mean_relapses']:.2f}
+- Mean time in Infected state: {data['mean_time_in_I']:.1f} timesteps
+                """)
+
 
 
 # ============================================================================
@@ -485,6 +518,40 @@ def reset_model():
     model_instance.set(None)
     current_step.set(0)
     solara.Info("Model reset. Create a new model to continue.")
+
+
+def export_results():
+    """Export simulation results to CSV"""
+    if model_instance.value is None or current_step.value == 0:
+        solara.Error("Please run a simulation first!")
+        return
+    
+    try:
+        import sys
+        from pathlib import Path
+        
+        # Add analysis module to path
+        current_dir = Path(__file__).parent.parent
+        sys.path.insert(0, str(current_dir))
+        
+        from analysis.export import export_simulation_results
+        
+        model = model_instance.value
+        narrative_name = f"N_beta{narrative_params.value['baseline_transmission']:.2f}_emo{narrative_params.value['emotional_intensity']:.2f}"
+        
+        created_files = export_simulation_results(
+            model=model,
+            output_dir="results",
+            narrative_name=narrative_name,
+            include_trajectories=True,
+            include_profile_metrics=True
+        )
+        
+        files_list = "\n".join([f"- {name}: {path}" for name, path in created_files.items()])
+        solara.Success(f"✅ Exported results to:\n{files_list}")
+        
+    except Exception as e:
+        solara.Error(f"Error exporting results: {str(e)}")
 
 
 # Toggle advanced settings

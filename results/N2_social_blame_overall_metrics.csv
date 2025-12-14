@@ -1,0 +1,2 @@
+narrative,R0,mean_alpha,mean_sigma,mean_gamma,mean_degree,infectious_period,peak_infected,peak_infected_pct,time_to_peak,attack_rate,population,total_steps
+N2_social_blame,21.279483758735836,0.7095628500000001,0.2876625,0.05737985426020511,5.982,17.42771941290088,620,0.62,12,2.131,1000,100

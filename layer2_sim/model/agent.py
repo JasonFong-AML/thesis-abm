@@ -53,6 +53,13 @@ class DisinformationAgent(mesa.Agent):
         self.state = 'S'  # Start susceptible (unless seeded)
         self.next_state = None  # For simultaneous activation
         
+        # History tracking for metrics
+        self.infection_count = 0  # Number of times entered I state
+        self.recovery_count = 0   # Number of times I → R
+        self.relapse_count = 0    # Number of times R → S
+        self.time_in_I = 0        # Cumulative timesteps in I state
+        self.current_I_duration = 0  # Current infection spell duration
+        
     # ============================================================================
     # STATE TRANSITION LOGIC
     # ============================================================================
@@ -73,7 +80,7 @@ class DisinformationAgent(mesa.Agent):
     
     def advance(self):
         """
-        Commit state transition.
+        Commit state transition and track history.
         Called by SimultaneousActivation after all agents have stepped.
         """
         if self.next_state:
@@ -81,9 +88,25 @@ class DisinformationAgent(mesa.Agent):
             self.state = self.next_state
             self.next_state = None
             
-            # Track cumulative infections
+            # Track transitions for metrics
             if old_state != 'I' and self.state == 'I':
+                # Entering I state
                 self.model.cumulative_infected += 1
+                self.infection_count += 1
+                self.current_I_duration = 0
+            
+            if old_state == 'I' and self.state == 'R':
+                # I → R: Successful correction
+                self.recovery_count += 1
+            
+            if old_state == 'R' and self.state == 'S':
+                # R → S: Relapse
+                self.relapse_count += 1
+            
+            # Track time in I
+            if self.state == 'I':
+                self.time_in_I += 1
+                self.current_I_duration += 1
     
     # ============================================================================
     # TRANSITION CHECKS

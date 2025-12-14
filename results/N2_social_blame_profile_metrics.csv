@@ -1,0 +1,6 @@
+narrative,profile,total_agents,ever_infected,attack_rate,mean_time_in_I,total_infections,total_recoveries,correction_rate,mean_relapses
+N2_social_blame,immune,200,197,0.985,21.375634517766496,361,348,0.96398891966759,1.1
+N2_social_blame,superspreader,150,149,0.9933333333333333,56.11409395973154,325,270,0.8307692307692308,1.36
+N2_social_blame,moderate,500,491,0.982,35.24643584521385,1093,986,0.9021043000914913,1.382
+N2_social_blame,critical_thinker,100,100,1.0,24.0,188,170,0.9042553191489362,1.11
+N2_social_blame,cynical_contrarian,50,50,1.0,39.42,94,79,0.8404255319148937,1.16

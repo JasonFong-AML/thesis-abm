@@ -28,6 +28,7 @@ class DisinformationModel(Model):
         narrative: Narrative parameters (β₀, Emo, Idw, p₀)
         population: Number of agents
         G: NetworkX scale-free graph
+        schedule: SimultaneousActivation scheduler
         datacollector: Mesa DataCollector for metrics
         cumulative_infected: Total ever infected (for attack rate)
     """
@@ -60,6 +61,9 @@ class DisinformationModel(Model):
             seed: Random seed for reproducibility
         """
         super().__init__(seed=seed)
+        
+        # Store seed explicitly for reproducibility
+        self.seed_value = seed
         
         # Validate archetype distribution
         if not validate_archetype_distribution(archetype_dist):
@@ -104,7 +108,7 @@ class DisinformationModel(Model):
         Returns:
             NetworkX graph
         """
-        return nx.barabasi_albert_graph(n=self.population, m=self.m_edges, seed=self._seed)
+        return nx.barabasi_albert_graph(n=self.population, m=self.m_edges, seed=self.seed_value)
     
     def _create_agents(self, archetype_dist: dict):
         """
@@ -324,6 +328,71 @@ class DisinformationModel(Model):
             }
         
         return rates
+    
+    def get_profile_stratified_metrics(self) -> dict:
+        """
+        Calculate detailed metrics for each archetype profile.
+        
+        Returns:
+            dict: Nested dictionary with profile-level metrics
+                {
+                    'archetype_name': {
+                        'total_agents': int,
+                        'ever_infected': int,
+                        'attack_rate': float,  # % ever infected
+                        'mean_time_in_I': float,  # avg timesteps in I
+                        'total_infections': int,  # sum of infection_count
+                        'total_recoveries': int,  # sum of recovery_count
+                        'correction_rate': float,  # recoveries / infections
+                        'mean_relapses': float  # avg relapse_count
+                    }
+                }
+        """
+        results = {}
+        
+        for archetype_name in ARCHETYPES.keys():
+            # Get all agents of this archetype
+            agents = [a for a in self.agents if a.archetype == archetype_name]
+            total = len(agents)
+            
+            if total == 0:
+                continue
+            
+            # Calculate metrics
+            ever_infected = sum(1 for a in agents if a.infection_count > 0)
+            total_infections = sum(a.infection_count for a in agents)
+            total_recoveries = sum(a.recovery_count for a in agents)
+            total_time_in_I = sum(a.time_in_I for a in agents)
+            total_relapses = sum(a.relapse_count for a in agents)
+            
+            # Mean time in I (only among those who were infected)
+            infected_agents = [a for a in agents if a.infection_count > 0]
+            mean_time_in_I = (
+                total_time_in_I / len(infected_agents) 
+                if len(infected_agents) > 0 else 0.0
+            )
+            
+            # Correction rate: % of infections that led to recovery
+            correction_rate = (
+                total_recoveries / total_infections 
+                if total_infections > 0 else 0.0
+            )
+            
+            # Mean relapses per agent
+            mean_relapses = total_relapses / total if total > 0 else 0.0
+            
+            results[archetype_name] = {
+                'total_agents': total,
+                'ever_infected': ever_infected,
+                'attack_rate': ever_infected / total if total > 0 else 0.0,
+                'mean_time_in_I': mean_time_in_I,
+                'total_infections': total_infections,
+                'total_recoveries': total_recoveries,
+                'correction_rate': correction_rate,
+                'mean_relapses': mean_relapses
+            }
+        
+        return results
     
     # ============================================================================
     # HELPER METHODS

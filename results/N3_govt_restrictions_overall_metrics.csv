@@ -1,0 +1,2 @@
+narrative,R0,mean_alpha,mean_sigma,mean_gamma,mean_degree,infectious_period,peak_infected,peak_infected_pct,time_to_peak,attack_rate,population,total_steps
+N3_govt_restrictions,21.27838099622121,0.7377234,0.286875,0.05949686601006327,5.982,16.80760798108022,609,0.609,10,2.115,1000,100

@@ -1,0 +1,2 @@
+narrative,R0,mean_alpha,mean_sigma,mean_gamma,mean_degree,infectious_period,peak_infected,peak_infected_pct,time_to_peak,attack_rate,population,total_steps
+N1_conspiracies,20.960252126944972,0.7171996875000001,0.28713749999999993,0.05877327789290719,5.982,17.014535105939377,583,0.583,12,2.132,1000,100
